@@ -7,6 +7,7 @@
   import FooterBar from "./lib/FooterBar.svelte";
   import BootSequence from "./lib/BootSequence.svelte";
   import Postcard from "./lib/Postcard.svelte";
+  import MemoryReel from "./lib/MemoryReel.svelte";
   import EscapeMetrics from "./lib/EscapeMetrics.svelte";
   import Community from "./lib/Community.svelte";
   import MemoryTimeline from "./lib/MemoryTimeline.svelte";
@@ -354,6 +355,7 @@
 </section>
 
 <ScrollReveal let:visible><Postcard {visible} /></ScrollReveal>
+<ScrollReveal let:visible><MemoryReel {visible} /></ScrollReveal>
 <ScrollReveal let:visible><EscapeMetrics {visible} /></ScrollReveal>
 <ScrollReveal let:visible><Community {visible} /></ScrollReveal>
 <ScrollReveal let:visible><MemoryTimeline {visible} /></ScrollReveal>
