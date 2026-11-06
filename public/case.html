@@ -489,7 +489,9 @@
       pedestal.position.set(-2.2, .375, 2.6); pedestal.castShadow = pedestal.receiveShadow = true; scene.add(pedestal);
 
       const loader = new GLTFLoader(); const cache = {};
-      const get = async id => SkeletonUtils.clone(await (cache[id] ??= loader.loadAsync(`./models/${id}.glb`).then(g => g.scene)));
+      // One fetch per model file, shared through the cache; clones come from the resolved scene.
+      const fetchScene = id => (cache[id] ??= loader.loadAsync(`./models/${id}.glb`).then(g => g.scene));
+      const ready = async ids => { const scenes = await Promise.all(ids.map(fetchScene)); return id => SkeletonUtils.clone(scenes[ids.indexOf(id)]); };
       const shadows = o => o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
       // Scale so the largest side (or the height) is `size`, sit it on y = 0, centre it in x/z.
       const fit = (obj, size, byHeight = false) => {
@@ -526,38 +528,53 @@
       const hits = [], idlers = [], walkers = [];
       let loaded = 0, t = 0, needs = true, visible = false, px = 0, py = 0, raf = 0, last = performance.now();
 
-      const load = async () => {
+      const CARD = 'playing-card-f2f787', DIE = 'd6-numeral-die-315b3a', FESTOON = 'festoon-light-run-45629f';
+      const FESTOONS = [[-3.8, -5.6, .42], [0, -6.6, 0], [3.8, -5.6, -.42]];
+      const IDLERS = [['blackjack-dealer-fc0ab1', -4.6, -.7], ['lounge-bartender-9d425a', .4, -5.6], ['poker-pro-da0258', 4.6, 1.1]];
+      const PATHS = [['graduate-student-945ef0', 2.9, 2.0, .22, 0], ['graffiti-artist-2deb3d', 2.9, 2.0, .22, Math.PI],
+        ['cocktail-server-eb211b', 6.3, 4.4, .12, 1.2], ['skate-filmer-b9d393', 6.3, 4.4, -.12, 4]];
+      const ROOM_IDS = [...new Set([...STATIONS.map(s => s.model), CARD, DIE, FESTOON])];
+      const PEOPLE_IDS = [...new Set([...IDLERS.map(i => i[0]), ...PATHS.map(p => p[0])])];
+      // Start every download now, in parallel. The no-op catch only stops an early failure being reported as
+      // unhandled; each promise is still awaited below, where a failure is handled.
+      for (const id of [...ROOM_IDS, ...PEOPLE_IDS]) fetchScene(id).catch(() => {});
+
+      // Stage 1: stations, their props and the lights. The room is playable once these are in.
+      const loadRoom = async () => {
+        const get = await ready(ROOM_IDS);
         for (const s of STATIONS) {
-          const g = fit(await get(s.model), s.size, s.byHeight);
+          const g = fit(get(s.model), s.size, s.byHeight);
           g.position.set(...s.pos); g.rotation.y = s.rot; g.traverse(o => { o.userData.station = s; }); scene.add(g); hits.push(g);
           s.anchor.y = topOf(g) + .25;
           if (s.key === 'cards') {
             const top = topOf(g);
             for (let i = 0; i < 3; i++) {
-              const c = layFlat(await get('playing-card-f2f787')); const f = fit(c, .34);
+              const f = fit(layFlat(get(CARD)), .34);
               f.position.set(s.pos[0] + (i - 1) * .3, top + .005, s.pos[2] + .1); f.rotation.y = s.rot + (i - 1) * .25; scene.add(f);
             }
           }
           if (s.key === 'dice') {
-            const d = fit(await get('d6-numeral-die-315b3a'), .16); d.position.set(s.pos[0] + .05, s.pos[1] + .06, s.pos[2]); d.rotation.y = .5; scene.add(d);
+            const d = fit(get(DIE), .16); d.position.set(s.pos[0] + .05, s.pos[1] + .06, s.pos[2]); d.rotation.y = .5; scene.add(d);
           }
-          needs = true;
         }
-        for (const [x, z, r] of [[-3.8, -5.6, .42], [0, -6.6, 0], [3.8, -5.6, -.42]]) {
-          const f = fit(await get('festoon-light-run-45629f'), 4.2); f.position.set(x, 2.5, z); f.rotation.y = r; scene.add(f);
+        for (const [x, z, r] of FESTOONS) {
+          const f = fit(get(FESTOON), 4.2); f.position.set(x, 2.5, z); f.rotation.y = r; scene.add(f);
           const glow = new THREE.PointLight(0xffc27a, 6, 6, 2); glow.position.set(x, 2.4, z + .6); scene.add(glow);
         }
-        for (const [id, x, z] of [['blackjack-dealer-fc0ab1', -4.6, -.7], ['lounge-bartender-9d425a', .4, -5.6], ['poker-pro-da0258', 4.6, 1.1]]) {
-          const m = await get(id); const b = bones(m); const g = fit(m, 1.75, true);
+        status.hidden = true; loaded = 1; needs = true; kick();
+      };
+      // Stage 2: the people pop in when their (larger) files arrive.
+      const loadPeople = async () => {
+        const get = await ready(PEOPLE_IDS);
+        for (const [id, x, z] of IDLERS) {
+          const m = get(id); const b = bones(m); const g = fit(m, 1.75, true);
           g.position.set(x, 0, z); g.rotation.y = Math.atan2(-x, -z); scene.add(g); idlers.push({ b, off: Math.random() * 6 });
         }
-        const paths = [['graduate-student-945ef0', 2.9, 2.0, .22, 0], ['graffiti-artist-2deb3d', 2.9, 2.0, .22, Math.PI],
-          ['cocktail-server-eb211b', 6.3, 4.4, .12, 1.2], ['skate-filmer-b9d393', 6.3, 4.4, -.12, 4]];
-        for (const [id, rx, rz, speed, phase] of paths) {
-          const m = await get(id); const b = bones(m); const g = fit(m, 1.72, true); scene.add(g);
+        for (const [id, rx, rz, speed, phase] of PATHS) {
+          const m = get(id); const b = bones(m); const g = fit(m, 1.72, true); scene.add(g);
           const w = { g, b, rx, rz, speed, phase }; walkers.push(w); placeWalker(w);
         }
-        status.hidden = true; loaded = 1; needs = true; kick();
+        needs = true; kick();
       };
       function placeWalker(w) {
         const th = w.phase + t * w.speed, cz = .3;
@@ -565,7 +582,8 @@
         const dx = -w.rx * Math.sin(th) * Math.sign(w.speed), dz = w.rz * Math.cos(th) * Math.sign(w.speed);
         w.g.position.set(x, 0, z); w.g.rotation.y = Math.atan2(dx, dz);
       }
-      load().catch(err => { console.warn('Room failed to load', err); status.hidden = false; status.textContent = 'The room didn’t load. Use the Play buttons in the case file.'; });
+      loadRoom().catch(err => { console.warn('Room failed to load', err); status.hidden = false; status.textContent = 'The room didn’t load. Use the Play buttons in the case file.'; });
+      loadPeople().catch(err => console.warn('Room characters failed to load', err));
 
       const size = () => {
         const w = room.clientWidth, h = room.clientHeight; if (!w || !h) return;
