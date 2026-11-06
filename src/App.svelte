@@ -15,6 +15,8 @@
   import RsvpDrawer from './lib/RsvpDrawer.svelte';
   import OooGeneratorModal from './lib/OooGeneratorModal.svelte';
   import ScrollReveal from './lib/ScrollReveal.svelte';
+  // Games Day props load after first paint so three.js stays off the critical path.
+  const loadGameProps = () => import('./lib/GameProps.svelte');
 
   let isDrawerOpen = false;
   let isOooGenOpen = false;
@@ -96,6 +98,7 @@
     </div>
   </main>
   <PageFooter />
+  {#await loadGameProps() then { default: GameProps }}<GameProps />{/await}
 
 {/if}
 

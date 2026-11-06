@@ -17,6 +17,7 @@
     <div class="next-intro">
       <p class="eyebrow">WHAT WE KNOW ABOUT 0x04</p>
       <h2 id="next-event-title">November is the plan.<br />The details are coming.</h2>
+      <p class="case-link"><a href="./case.html">Can't wait? Try Case File #1, a small taste of Games Day &rarr;</a></p>
       <p class="event-date">{NEXT_EVENT.code} <span aria-hidden="true">·</span> {NEXT_EVENT.when}</p>
       <p class="intro">Date, venue, programme and passes will be announced here.</p>
     </div>
@@ -58,4 +59,6 @@
   .expanded .indicator { transform: rotate(45deg); }
   .answer { margin: 0; padding: 0 30px 24px 34px; color: var(--muted); font-size: 14px; line-height: 1.8; }
   @media (max-width: 760px) { .next-inner { grid-template-columns: minmax(0, 1fr); gap: 44px; } }
+  .case-link { margin-top: 12px; font-family: "Permanent Marker", cursive; }
+  .case-link a { color: var(--pink-deep); }
 </style>

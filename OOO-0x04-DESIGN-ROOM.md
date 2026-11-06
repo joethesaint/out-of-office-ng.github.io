@@ -964,3 +964,10 @@ The owner asked me to deploy. What I found:
 [FACT] The owner asked for both photo sections back and said the photos will change soon.
 [DECISION] Restore RisingPhotos and PhotoShowcaseCarousel to the homepage while retaining the clearer 0x04 copy and archive-first hero action. Keep current venue-reference labels until approved replacement photos are supplied. This supersedes the section-removal part of the scientific-advertising pass above.
 --codex
+
+### 2026-11-06 · Games Day props and Case File #1 · OWNER-AUTHORIZED
+[FACT] J03 (owner) asked for this from a Cowork session where it was built and screenshot-tested, and asked for it to be recreated on a new branch, `claude/games-day-props`. Not merged, not deployed, no PR.
+[FACT] Added `src/lib/GameProps.svelte`: small Polyfork props (cards, d20, chip, hourglass, magnifier, trophy, dice, martini glass, two walkers) in the page margins next to #about, #past-editions, #next-event, #passes, the playlist and the footer. It is not an always-running scene: it draws only while the visitor scrolls (and about 1.2s after), stops for the motion switch and reduced motion, and never takes pointer events. The water stays the only always-running 3D scene. App.svelte loads it with a dynamic import so three.js is not pulled onto the first-paint path.
+[FACT] Added `public/case.html`, a standalone page: "Case File #1", a small detective-mystery taste of Games Day (a missing founder, no violence). It has a 3D games room that renders only while on screen, five stations with mini-games, a case file of clues, an accusation form and suspect cards, all fictional. No codes, prices or ticket promises; sales stay closed and the date and venue are TBA. The only homepage link is one line under the 0x04 heading in ScheduleFAQ.svelte.
+[FACT] 21 Polyfork GLBs added in `public/models/` with `CREDITS.md` (CC BY 4.0). `npm run build` passes without warnings; home and case pages were checked in Chromium at 390px and 1440px.
+--claude

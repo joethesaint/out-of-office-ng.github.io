@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Case File #1 — Out of Office 0x04 Games Day</title>
+  <meta name="description" content="Walk the room, win the clues, crack the case. A small taste of OOO 0x04, Games Day." />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    } }
+  </script>
+  <style>
+    @font-face { font-family: "Gelasio"; font-weight: 400 700; font-display: swap; src: url("./fonts/gelasio-latin.woff2") format("woff2"); }
+    @font-face { font-family: "Permanent Marker"; font-display: swap; src: url("./fonts/permanent-marker.woff2") format("woff2"); }
+    :root {
+      --paper: #f2efe8; --panel: #faf8f2; --ink: #243e3c; --muted: #586a67; --teal: #376a65; --pink: #b02f67;
+      --manila: #e8d9b5; --manila-ink: #3a2f1c; --line: rgba(36, 62, 60, .16);
+      --serif: "Gelasio", Georgia, serif; --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --marker: "Permanent Marker", cursive;
+    }
+    [hidden] { display: none !important; }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--sans); overflow-x: hidden; }
+    a { color: var(--teal); }
+    button { font: inherit; }
+    :focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.15; margin: 0; }
+
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px clamp(16px, 4vw, 40px); background: rgba(242, 239, 232, .92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .topbar a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: 13px; letter-spacing: .08em; }
+    .topbar a:hover { color: var(--teal); }
+    .tag { background: var(--pink); color: #fff; font: 13px/1 var(--marker); padding: 7px 11px 6px; border-radius: 3px; transform: rotate(-2deg); white-space: nowrap; }
+
+    main { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 40px; }
+    .intro { padding: clamp(32px, 6vw, 64px) 0 24px; max-width: 680px; }
+    .intro h1 { font-size: clamp(34px, 6vw, 56px); }
+    .intro p { color: var(--muted); font-size: clamp(15px, 2vw, 17px); margin: 16px 0 0; }
+    .label { font: 13px/1.3 var(--marker); color: var(--teal); letter-spacing: .02em; margin: 0 0 6px; }
+
+    .room { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #15100f; box-shadow: 0 24px 60px rgba(36, 62, 60, .25); touch-action: pan-y; }
+    .room canvas { display: block; width: 100%; height: 100%; }
+    .room-status { position: absolute; inset: 0; display: grid; place-items: center; color: #f3e6d4; font: 18px var(--marker); text-align: center; padding: 24px; pointer-events: none; }
+    .pins { position: absolute; inset: 0; pointer-events: none; }
+    .pin { position: absolute; left: 0; top: 0; pointer-events: auto; transform: translate(-50%, -100%); border: 0; cursor: pointer; white-space: nowrap;
+      background: var(--panel); color: var(--ink); font: 13px/1 var(--marker); padding: 8px 10px 7px; border-radius: 999px; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
+    .pin::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: inherit; transform: translateX(-50%) rotate(45deg); z-index: -1; }
+    .pin:hover { background: #fff; }
+    .pin.done { background: var(--teal); color: #fff; }
+    .room-hint { margin: 10px 2px 0; color: var(--muted); font-size: 13px; }
+
+    .board { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(24px, 4vw, 44px); margin-top: clamp(32px, 5vw, 56px); align-items: start; }
+    .folder { position: relative; background: var(--manila); color: var(--manila-ink); border-radius: 4px 10px 10px 10px; padding: clamp(20px, 3vw, 32px); box-shadow: 0 14px 30px rgba(58, 47, 28, .18); margin-top: 22px; }
+    .folder::before { content: "CASE FILE #1"; position: absolute; top: -22px; left: 0; background: var(--manila); padding: 4px 16px 0; height: 24px; border-radius: 8px 8px 0 0; font: 12px/20px var(--marker); letter-spacing: .04em; }
+    .folder h2 { font-size: clamp(24px, 3vw, 30px); }
+    .folder .label { color: var(--manila-ink); opacity: .75; }
+    .setup { margin: 12px 0 20px; font-size: 15px; }
+    .counter { font: 15px var(--marker); margin: 0 0 10px; }
+    .clues { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .clue { background: rgba(255, 255, 255, .45); border: 1px dashed rgba(58, 47, 28, .35); border-radius: 6px; padding: 12px 14px; }
+    .clue-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .clue-head strong { font-family: var(--serif); font-size: 17px; }
+    .clue .lock { font-size: 13px; opacity: .7; }
+    .clue.won { background: #fffdf6; border-style: solid; border-color: rgba(58, 47, 28, .25); }
+    .clue-body { margin-top: 8px; font-size: 14px; }
+    .clue-body .evidence { font-family: var(--serif); font-style: italic; margin: 0 0 4px; }
+    .clue-body .letters { font: 20px/1.3 var(--marker); letter-spacing: .12em; margin: 0 0 4px; }
+    .clue-body .so { margin: 0; font-weight: 600; }
+    .btn { border: 0; border-radius: 999px; background: var(--teal); color: #fff; font-weight: 600; font-size: 14px; padding: 9px 18px; cursor: pointer; }
+    .btn:hover { background: #2c5853; }
+    .btn.small { padding: 6px 14px; font-size: 13px; }
+    .btn.ghost { background: transparent; color: var(--teal); box-shadow: inset 0 0 0 2px var(--teal); }
+
+    .accuse { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(58, 47, 28, .25); }
+    .accuse h3 { font-size: 21px; margin-bottom: 12px; }
+    .accuse .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .accuse label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+    .accuse select { font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 6px; border: 1px solid rgba(58, 47, 28, .4); background: #fffdf6; color: var(--manila-ink); }
+    .verdict { margin: 14px 0 0; padding: 12px 14px; border-radius: 6px; background: rgba(255, 255, 255, .55); font-size: 15px; }
+    .verdict.solved { background: var(--teal); color: #fff; }
+    .verdict.solved a { color: #fff; font-weight: 600; }
+
+    .suspects h2 { font-size: clamp(24px, 3vw, 30px); margin-bottom: 14px; }
+    .suspect-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .suspect { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--paper); font: 20px var(--marker); }
+    .suspect strong { font-family: var(--serif); font-size: 18px; }
+    .suspect p { margin: 2px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+
+    footer { max-width: 1120px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    footer p { margin: 0 0 10px; }
+    footer ul { margin: 6px 0 0; padding-left: 18px; columns: 2; column-gap: 32px; }
+    footer li { break-inside: avoid; }
+    footer a { color: var(--muted); }
+
+    /* Mini-game modal */
+    .modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(20, 16, 15, .62); }
+    .sheet { position: relative; width: min(100%, 460px); background: var(--panel); border-radius: 14px; padding: 26px clamp(18px, 4vw, 28px) 24px; box-shadow: 0 30px 80px rgba(0, 0, 0, .4); }
+    .sheet h2 { font-size: 26px; padding-right: 36px; }
+    .sheet .help { color: var(--muted); margin: 8px 0 18px; font-size: 15px; }
+    .close { position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: transparent; font-size: 26px; line-height: 1; color: var(--ink); cursor: pointer; }
+    .close:hover { background: rgba(36, 62, 60, .08); }
+    .stage { min-height: 120px; display: grid; place-items: center; }
+    .msg { min-height: 1.6em; margin: 14px 0; font-weight: 600; text-align: center; }
+    .msg.win { color: var(--teal); }
+    .msg.lose { color: var(--pink); }
+    .actions { display: flex; justify-content: center; }
+    .actions .btn { min-width: 160px; padding: 12px 22px; font-size: 16px; }
+
+    .bar { position: relative; width: 100%; height: 34px; border-radius: 999px; background: #e4ded2; overflow: hidden; }
+    .zone { position: absolute; top: 0; bottom: 0; background: #59a36a; }
+    .marker { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: var(--ink); border-radius: 3px; }
+    .dice { display: flex; gap: 18px; font-size: 76px; line-height: 1; color: var(--ink); }
+    .dice-total { text-align: center; color: var(--muted); margin-top: 6px; }
+    .cards { position: relative; width: 100%; max-width: 330px; height: 150px; }
+    .pcard { position: absolute; top: 0; width: 31%; height: 140px; border-radius: 10px; border: 2px solid var(--ink); background: #fff; color: var(--ink);
+      font: 600 34px var(--serif); cursor: pointer; transition: left .32s ease; display: grid; place-items: center; }
+    .pcard.red { color: #b3262f; }
+    .pcard.down { background: repeating-linear-gradient(45deg, var(--teal) 0 8px, #2c5853 8px 16px); color: transparent; }
+    .pcard:disabled { cursor: default; }
+    .kick { text-align: center; }
+    .kick .count { font: 44px var(--marker); }
+    .timebar { width: 100%; height: 8px; border-radius: 4px; background: #e4ded2; overflow: hidden; margin-top: 10px; }
+    .timebar span { display: block; height: 100%; width: 100%; background: var(--pink); transform-origin: left; }
+
+    @media (max-width: 720px) {
+      .room { aspect-ratio: 4 / 5; }
+      .board { grid-template-columns: minmax(0, 1fr); }
+      .accuse .row { grid-template-columns: minmax(0, 1fr); }
+      footer ul { columns: 1; }
+      .topbar a { font-size: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pcard { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a href="/#next-event">&larr; OUT OF OFFICE 0x04</a>
+    <span class="tag">CASE FILE #1</span>
+  </header>
+
+  <main>
+    <section class="intro">
+      <p class="label">OOO 0x04 · Games Day preview</p>
+      <h1>Walk the room. Win the clues.</h1>
+      <p>Tap a station, beat its mini-game, and the clue goes into your case file. Collect all five, then make your accusation. A small taste of OOO 0x04, Games Day.</p>
+    </section>
+
+    <section aria-label="The games room">
+      <div class="room" id="room">
+        <canvas id="room-canvas" aria-hidden="true"></canvas>
+        <div class="pins" id="pins"></div>
+        <p class="room-status" id="room-status">Setting up the room…</p>
+      </div>
+      <p class="room-hint">Tap a label in the room, or use the Play buttons in the case file.</p>
+    </section>
+
+    <div class="board">
+      <section class="folder" aria-labelledby="case-title">
+        <p class="label">The missing founder</p>
+        <h2 id="case-title">Where is Remi?</h2>
+        <p class="setup">At 6pm Remi Adeyemi, founder of a Lagos social club, stepped away to “grab something from upstairs” and never came back. The phone is still on the table. The announcement envelope is gone. Remi is somewhere in this venue.</p>
+        <p class="counter" id="counter" aria-live="polite">Clues found: 0 / 5</p>
+        <ul class="clues" id="clues"></ul>
+
+        <form class="accuse" id="accuse">
+          <h3>Make your accusation</h3>
+          <div class="row">
+            <label>Who did it?
+              <select name="who" required>
+                <option value="">Choose a suspect</option>
+                <option>Kemi</option><option>Dayo</option><option>Uche</option><option>Ife</option><option>Femi</option>
+              </select>
+            </label>
+            <label>Where is Remi?
+              <select name="where" required>
+                <option value="">Choose a place</option>
+                <option>Rooftop</option><option>Storeroom</option><option>Kitchen</option><option>Car park</option>
+              </select>
+            </label>
+          </div>
+          <button class="btn" type="submit">Accuse</button>
+          <p class="verdict" id="verdict" role="status" hidden></p>
+        </form>
+      </section>
+
+      <section class="suspects" aria-labelledby="suspects-title">
+        <p class="label">Everyone in the room</p>
+        <h2 id="suspects-title">The suspects</h2>
+        <ul class="suspect-list">
+          <li class="suspect"><span class="avatar" aria-hidden="true">K</span><div><strong>Kemi</strong><p>Co-founder. Wants to sell the club.</p></div></li>
+          <li class="suspect"><span class="avatar" aria-hidden="true">D</span><div><strong>Dayo</strong><p>Photographer. Had a public falling-out with Remi.</p></div></li>
+          <li class="suspect"><span class="avatar" aria-hidden="true">U</span><div><strong>Uche</strong><p>Caterer. Says Remi owes money.</p></div></li>
+          <li class="suspect"><span class="avatar" aria-hidden="true">I</span><div><strong>Ife</strong><p>Rival planner. Losing clients to the club.</p></div></li>
+          <li class="suspect"><span class="avatar" aria-hidden="true">F</span><div><strong>Femi</strong><p>Uninvited plus-one. Nobody knows who brought him.</p></div></li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>Case File #1 is a game. Remi, Kemi, Dayo, Uche, Ife and Femi are fictional characters; any resemblance to real people is a coincidence.</p>
+    <p>OOO 0x04 Games Day is planned for November 2026. Date and venue are TBA. Follow <a href="https://www.instagram.com/outofoffice_ng/">@outofoffice_ng</a> for the announcement.</p>
+    <p>3D models by Polyfork, CC BY 4.0. The magnifying glass on the home page is drawn in code.</p>
+    <ul id="credits"></ul>
+  </footer>
+
+  <div class="modal" id="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="game-title">
+      <button class="close" id="game-close" type="button" aria-label="Close">&times;</button>
+      <p class="label" id="game-label">Station</p>
+      <h2 id="game-title"></h2>
+      <p class="help" id="game-help"></p>
+      <div class="stage" id="game-stage"></div>
+      <p class="msg" id="game-msg" aria-live="polite"></p>
+      <div class="actions"><button class="btn" id="game-action" type="button"></button></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const $ = id => document.getElementById(id);
+
+    // ---------- Stations, clues and games ----------
+    const STATIONS = [
+      { key: 'pool', name: 'Pool table', model: 'pool-table-1b3f86', pos: [0, 0, .4], rot: 0, size: 2.7,
+        help: 'Tap Shoot when the marker is inside the green zone.', game: 'sweep', zone: .22, period: 1.6,
+        clue: { title: 'Torn contract', evidence: '“…sale of the club, subject to the founders’ joint approval…”', so: 'So a sale needs Remi’s yes.' } },
+      { key: 'cards', name: 'Card table', model: 'tournament-poker-table-a75b66', pos: [-3.6, 0, -1.6], rot: .6, size: 2.3,
+        help: 'Watch the Queen, then find her after the shuffle.', game: 'queen',
+        clue: { title: 'Text from Kemi, 5:52pm', evidence: '“Meet me upstairs, need to talk before you go on.”', so: 'Kemi saw Remi last.' } },
+      { key: 'dice', name: 'Dice tray', model: 'hexagonal-dice-tray-883963', pos: [-2.2, .75, 2.6], rot: 0, size: .75,
+        help: 'Roll two dice. You need 7 or more.', game: 'dice',
+        clue: { title: 'Scrambled letters', letters: 'R O O M · S T O E R', so: 'Unscramble it: that is where Remi is.' } },
+      { key: 'arcade', name: 'Arcade', model: 'arcade-console-ec27c2', pos: [3.8, 0, -2.4], rot: -.7, size: 1.9, byHeight: true,
+        help: 'Same as the pool shot, but the zone is smaller and the marker faster.', game: 'sweep', zone: .10, period: 1.05,
+        clue: { title: 'Venue key log', evidence: 'Spare storage key signed out by “K.”', so: 'Whoever took the key had the means.' } },
+      { key: 'foos', name: 'Foosball', model: 'taca-taca-616f6a', pos: [3.4, 0, 2], rot: -.4, size: 1.6,
+        help: 'Kick 12 times in 4 seconds. The clock starts on your first kick.', game: 'kick',
+        clue: { title: 'Dayo’s photos', evidence: 'Time-stamped 5:50–6:10pm, all at the front entrance.', so: 'That clears Dayo.' } }
+    ];
+    const won = new Set();
+
+    // ---------- Case file ----------
+    function renderClues() {
+      const list = $('clues'); list.textContent = '';
+      for (const s of STATIONS) {
+        const li = document.createElement('li'); li.className = 'clue' + (won.has(s.key) ? ' won' : '');
+        const head = document.createElement('div'); head.className = 'clue-head';
+        const title = document.createElement('div');
+        title.innerHTML = `<strong></strong><br><span class="lock"></span>`;
+        title.querySelector('strong').textContent = s.name;
+        title.querySelector('.lock').textContent = won.has(s.key) ? s.clue.title : 'Locked clue';
+        head.append(title);
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small' + (won.has(s.key) ? ' ghost' : '');
+        b.textContent = won.has(s.key) ? 'Replay' : 'Play'; b.setAttribute('aria-label', `${b.textContent} ${s.name}`);
+        b.addEventListener('click', () => openGame(s, b)); head.append(b); li.append(head);
+        if (won.has(s.key)) {
+          const body = document.createElement('div'); body.className = 'clue-body';
+          if (s.clue.letters) { const p = document.createElement('p'); p.className = 'letters'; p.textContent = s.clue.letters; body.append(p); }
+          if (s.clue.evidence) { const p = document.createElement('p'); p.className = 'evidence'; p.textContent = s.clue.evidence; body.append(p); }
+          const so = document.createElement('p'); so.className = 'so'; so.textContent = s.clue.so; body.append(so);
+          li.append(body);
+        }
+        list.append(li);
+      }
+      $('counter').textContent = `Clues found: ${won.size} / 5`;
+      for (const s of STATIONS) if (s.pin) s.pin.classList.toggle('done', won.has(s.key));
+    }
+
+    $('accuse').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = new FormData(e.target); const who = f.get('who'), where = f.get('where');
+      const v = $('verdict'); v.hidden = false; v.className = 'verdict';
+      if (who === 'Kemi' && where === 'Storeroom') {
+        v.classList.add('solved');
+        v.innerHTML = 'Case closed. Kemi locked Remi in the storeroom to stall the sale. Remi is safe, and annoyed. You cracked the online case. The real one opens at Games Day in November. Follow <a href="https://www.instagram.com/outofoffice_ng/">@outofoffice_ng</a> for the date and venue.';
+      } else if (who === 'Kemi') {
+        v.textContent = 'Right person, wrong place. Look at the letters from the dice tray again.';
+      } else if (where === 'Storeroom') {
+        v.textContent = 'Right place. Now: who signed out the spare storage key, and who wanted the sale to go through?';
+      } else if (who === 'Dayo') {
+        v.textContent = 'Dayo’s photos put him at the front entrance the whole time. Try someone else.';
+      } else {
+        v.textContent = 'Not quite. Win more clues and check who had the motive, the means and the last word with Remi.';
+      }
+    });
+
+    // ---------- Mini-game modal ----------
+    const modal = $('modal'), stage = $('game-stage'), msg = $('game-msg'), action = $('game-action');
+    let cleanup = null, returnFocus = null, current = null, kickRoom = () => {};
+    const timers = new Set();
+    const later = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); fn(); }, ms); timers.add(id); return id; };
+    function stopGame() { cleanup?.(); cleanup = null; timers.forEach(clearTimeout); timers.clear(); }
+
+    function setAction(label, fn) { action.hidden = false; action.textContent = label; action.onclick = fn; }
+    const ui = {
+      action: setAction,
+      msg(text, kind = '') { msg.textContent = text; msg.className = 'msg' + (kind ? ' ' + kind : ''); },
+      win(text) {
+        stopGame(); won.add(current.key); renderClues();
+        ui.msg(`${text} Clue added to your case file.`, 'win');
+        setAction('Back to the room', closeGame); action.focus();
+      },
+      lose(text) {
+        stopGame(); ui.msg(text, 'lose');
+        setAction('Try again', () => startGame(current)); action.focus();
+      }
+    };
+
+    function openGame(s, from) {
+      returnFocus = from || document.activeElement; current = s;
+      $('game-label').textContent = s.name; $('game-title').textContent = s.game === 'queen' ? 'Find the Queen' : s.game === 'dice' ? 'Roll for it' : s.game === 'kick' ? 'Rapid fire' : s.key === 'arcade' ? 'High score' : 'Line up the shot';
+      $('game-help').textContent = s.help;
+      modal.hidden = false; document.body.style.overflow = 'hidden';
+      startGame(s);
+    }
+    function startGame(s) {
+      stopGame(); ui.msg(''); stage.textContent = '';
+      cleanup = GAMES[s.game](s) || null; action.focus();
+    }
+    function closeGame() {
+      stopGame(); modal.hidden = true; document.body.style.overflow = ''; current = null; kickRoom();
+      returnFocus?.focus?.();
+    }
+    $('game-close').addEventListener('click', closeGame);
+    modal.addEventListener('click', e => { if (e.target === modal) closeGame(); });
+    document.addEventListener('keydown', e => {
+      if (modal.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); closeGame(); return; }
+      if (e.key === 'Tab') {
+        const f = [...modal.querySelectorAll('button:not([disabled]):not([hidden])')].filter(b => b.offsetParent);
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    const GAMES = {
+      sweep(s) {
+        const z0 = .08 + Math.random() * (.84 - s.zone);
+        stage.innerHTML = `<div class="bar" aria-hidden="true"><div class="zone" style="left:${z0 * 100}%;width:${s.zone * 100}%"></div><div class="marker"></div></div>`;
+        const marker = stage.querySelector('.marker');
+        const per = s.period * (reduce.matches ? 1.6 : 1) * 1000, start = performance.now();
+        const pos = now => { const p = ((now - start) % per) / per; return p < .5 ? p * 2 : 2 - p * 2; };
+        let raf = 0;
+        const tick = now => { marker.style.left = pos(now) * 100 + '%'; raf = requestAnimationFrame(tick); };
+        raf = requestAnimationFrame(tick);
+        ui.action('Shoot', () => {
+          cancelAnimationFrame(raf); const p = pos(performance.now()); marker.style.left = p * 100 + '%';
+          if (p >= z0 && p <= z0 + s.zone) ui.win(s.key === 'arcade' ? 'New high score.' : 'Clean shot, ball sunk.');
+          else ui.lose(p < z0 ? 'Too early. Just missed.' : 'Too late. Just missed.');
+        });
+        return () => cancelAnimationFrame(raf);
+      },
+      dice() {
+        const faces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        stage.innerHTML = `<div><div class="dice" aria-hidden="true"><span>⚅</span><span>⚅</span></div><p class="dice-total">Two dice, need 7+</p></div>`;
+        const [a, b] = stage.querySelectorAll('.dice span'), total = stage.querySelector('.dice-total');
+        let iv = 0;
+        ui.action('Roll', () => {
+          action.hidden = true;
+          const x = 1 + Math.floor(Math.random() * 6), y = 1 + Math.floor(Math.random() * 6);
+          const done = () => {
+            clearInterval(iv); a.textContent = faces[x - 1]; b.textContent = faces[y - 1];
+            total.textContent = `${x} + ${y} = ${x + y}`;
+            x + y >= 7 ? ui.win(`You rolled ${x + y}.`) : ui.lose(`You rolled ${x + y}. You need 7 or more.`);
+          };
+          if (reduce.matches) return done();
+          iv = setInterval(() => { a.textContent = faces[Math.floor(Math.random() * 6)]; b.textContent = faces[Math.floor(Math.random() * 6)]; }, 70);
+          later(done, 650);
+        });
+        return () => clearInterval(iv);
+      },
+      queen() {
+        const labels = [['Q♥', true], ['J♠', false], ['K♣', false]];
+        const slotOf = [0, 1, 2]; slotOf.sort(() => Math.random() - .5);
+        stage.innerHTML = '<div class="cards"></div>';
+        const wrap = stage.querySelector('.cards');
+        const cards = labels.map(([t, red], i) => {
+          const c = document.createElement('button'); c.type = 'button'; c.className = 'pcard' + (red ? ' red' : ''); c.textContent = t; c.disabled = true;
+          c.setAttribute('aria-label', t.startsWith('Q') ? 'Queen of hearts' : t.startsWith('J') ? 'Jack of spades' : 'King of clubs');
+          wrap.append(c); return c;
+        });
+        const place = () => cards.forEach((c, i) => { c.style.left = (slotOf[i] * 34.5) + '%'; });
+        place();
+        ui.msg('That’s the Queen of hearts. Keep your eye on her.');
+        ui.action('Shuffle', () => {
+          action.hidden = true; ui.msg('Shuffling…');
+          cards.forEach((c, i) => { c.classList.add('down'); c.setAttribute('aria-label', `Card in position ${slotOf[i] + 1}`); });
+          const step = reduce.matches ? 0 : 400;
+          let n = 0;
+          const swap = () => {
+            if (n++ >= 6) return pick();
+            const a = Math.floor(Math.random() * 3), b = (a + 1 + Math.floor(Math.random() * 2)) % 3;
+            const ia = slotOf.indexOf(a), ib = slotOf.indexOf(b); slotOf[ia] = b; slotOf[ib] = a; place();
+            step ? later(swap, step) : swap();
+          };
+          later(swap, reduce.matches ? 0 : 450);
+        });
+        function pick() {
+          ui.msg('Where’s the Queen?');
+          const ordered = [...cards].sort((x, y) => slotOf[cards.indexOf(x)] - slotOf[cards.indexOf(y)]);
+          ordered.forEach((c, i) => { c.disabled = false; c.setAttribute('aria-label', `Card ${i + 1} of 3`); wrap.append(c); });
+          cards.forEach(c => c.onclick = () => {
+            cards.forEach(x => { x.disabled = true; x.classList.remove('down'); });
+            cards.indexOf(c) === 0 ? ui.win('You found the Queen.') : ui.lose('Not her. The Queen was ' + (['on the left', 'in the middle', 'on the right'][slotOf[0]]) + '.');
+          });
+          ordered[1].focus();
+        }
+      },
+      kick() {
+        stage.innerHTML = `<div class="kick" style="width:100%"><div class="count">0 / 12</div><div class="timebar" aria-hidden="true"><span></span></div></div>`;
+        const count = stage.querySelector('.count'), bar = stage.querySelector('.timebar span');
+        let n = 0, start = 0, raf = 0;
+        const tick = now => {
+          const left = Math.max(0, 1 - (now - start) / 4000); bar.style.transform = `scaleX(${left})`;
+          if (left <= 0) return ui.lose(`${n} of 12. Too slow, try again.`);
+          raf = requestAnimationFrame(tick);
+        };
+        ui.action('Kick!', () => {
+          if (!start) { start = performance.now(); raf = requestAnimationFrame(tick); }
+          n++; count.textContent = `${n} / 12`;
+          if (n >= 12) ui.win('Goal!');
+        });
+        return () => cancelAnimationFrame(raf);
+      }
+    };
+
+    // ---------- Credits ----------
+    const CREDITS = [['Pool Table', 'pool-table-1b3f86'], ['Tournament Poker Table', 'tournament-poker-table-a75b66'], ['Playing Card', 'playing-card-f2f787'],
+      ['Hexagonal Dice Tray', 'hexagonal-dice-tray-883963'], ['D6 Numeral Die', 'd6-numeral-die-315b3a'], ['Arcade Console', 'arcade-console-ec27c2'],
+      ['Taca Taca', 'taca-taca-616f6a'], ['Festoon Light Run', 'festoon-light-run-45629f'], ['Blackjack Dealer', 'blackjack-dealer-fc0ab1'],
+      ['Lounge Bartender', 'lounge-bartender-9d425a'], ['Poker Pro', 'poker-pro-da0258'], ['Graduate Student', 'graduate-student-945ef0'],
+      ['Graffiti Artist', 'graffiti-artist-2deb3d'], ['Cocktail Server', 'cocktail-server-eb211b'], ['Skate Filmer', 'skate-filmer-b9d393']];
+    for (const [t, id] of CREDITS) { const li = document.createElement('li'); const a = document.createElement('a'); a.href = `https://polyfork.dev/asset/${id}`; a.textContent = t; li.append(a, ' by Polyfork, CC BY 4.0'); $('credits').append(li); }
+
+    // ---------- The 3D room ----------
+    const room = $('room'), canvas = $('room-canvas'), pins = $('pins'), status = $('room-status');
+
+    // Pins first, before anything async, so the render loop never meets a station without one.
+    for (const s of STATIONS) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pin'; b.textContent = s.name;
+      b.setAttribute('aria-label', `Play ${s.name}`); b.addEventListener('click', () => openGame(s, b));
+      pins.append(b); s.pin = b; s.anchor = new THREE.Vector3(s.pos[0], s.pos[1] + 1.4, s.pos[2]);
+    }
+    renderClues();
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    } catch (err) {
+      status.textContent = 'The 3D room can’t run on this device. Use the Play buttons in the case file.';
+      pins.hidden = true;
+    }
+
+    if (renderer) {
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x15100f);
+      scene.fog = new THREE.Fog(0x15100f, 14, 30);
+      const camera = new THREE.PerspectiveCamera(40, 16 / 9, .1, 80);
+      const look = new THREE.Vector3(0, .4, 0);
+
+      scene.add(new THREE.HemisphereLight(0x8a6f78, 0x1a0e0b, .9));
+      const lamp = new THREE.PointLight(0xffb36b, 90, 22, 1.6); lamp.position.set(0, 5, 1.2);
+      lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024); lamp.shadow.radius = 4; lamp.shadow.bias = -.002; scene.add(lamp);
+      const fill = new THREE.DirectionalLight(0xffd9b0, .5); fill.position.set(-4, 6, 6); scene.add(fill);
+
+      const floor = new THREE.Mesh(new THREE.CircleGeometry(9.2, 48), new THREE.MeshStandardMaterial({ color: 0x2a221f, roughness: .9 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+      const rug = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.6, .03, 6), new THREE.MeshStandardMaterial({ color: 0x8e2a2a, roughness: 1 }));
+      rug.position.set(0, .016, .4); rug.receiveShadow = true; scene.add(rug);
+      const wall = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 5.5, 7, 1, true), new THREE.MeshStandardMaterial({ color: 0x4a1416, roughness: .95, side: THREE.BackSide }));
+      wall.position.y = 2.75; wall.rotation.y = Math.PI / 7; wall.receiveShadow = true; scene.add(wall);
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(.38, .44, .75, 16), new THREE.MeshStandardMaterial({ color: 0x3b2c24, roughness: .7 }));
+      pedestal.position.set(-2.2, .375, 2.6); pedestal.castShadow = pedestal.receiveShadow = true; scene.add(pedestal);
+
+      const loader = new GLTFLoader(); const cache = {};
+      const get = async id => SkeletonUtils.clone(await (cache[id] ??= loader.loadAsync(`./models/${id}.glb`).then(g => g.scene)));
+      const shadows = o => o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+      // Scale so the largest side (or the height) is `size`, sit it on y = 0, centre it in x/z.
+      const fit = (obj, size, byHeight = false) => {
+        const b = new THREE.Box3().setFromObject(obj), v = b.getSize(new THREE.Vector3());
+        const k = size / (byHeight ? v.y : Math.max(v.x, v.y, v.z)); obj.scale.multiplyScalar(k);
+        const b2 = new THREE.Box3().setFromObject(obj), c = b2.getCenter(new THREE.Vector3());
+        obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y -= b2.min.y;
+        const g = new THREE.Group(); g.add(obj); shadows(obj); return g;
+      };
+      // Turn an object so its thinnest side points up (cards lie flat, whatever way they were modelled).
+      const layFlat = obj => {
+        const v = new THREE.Box3().setFromObject(obj).getSize(new THREE.Vector3());
+        if (v.z < v.y && v.z <= v.x) obj.rotation.x = -Math.PI / 2; else if (v.x < v.y && v.x < v.z) obj.rotation.z = Math.PI / 2;
+        const g = new THREE.Group(); g.add(obj); return g;
+      };
+      const topOf = o => new THREE.Box3().setFromObject(o).max.y;
+
+      const bones = obj => {
+        const b = {};
+        obj.traverse(o => { if (/^(Spine1|Head|LeftUpLeg|RightUpLeg|LeftLeg|RightLeg|LeftArm|RightArm)$/.test(o.name) && !b[o.name]) b[o.name] = { o, rest: o.rotation.clone() }; });
+        if (b.LeftArm) b.LeftArm.rest.z -= 1.25; if (b.RightArm) b.RightArm.rest.z += 1.25;
+        for (const k in b) b[k].o.rotation.copy(b[k].rest);
+        return b;
+      };
+      const set = (b, n, ax, v) => { const x = b[n]; if (x) x.o.rotation[ax] = x.rest[ax] + v; };
+      const walk = (b, t) => {
+        const s = Math.sin(t), c = Math.cos(t);
+        set(b, 'LeftUpLeg', 'x', s * .45); set(b, 'RightUpLeg', 'x', -s * .45);
+        set(b, 'LeftLeg', 'x', Math.max(0, -c) * .5); set(b, 'RightLeg', 'x', Math.max(0, c) * .5);
+        set(b, 'LeftArm', 'x', -s * .35); set(b, 'RightArm', 'x', s * .35);
+      };
+      const idle = (b, t) => { set(b, 'Head', 'y', Math.sin(t * .7) * .35); set(b, 'Spine1', 'z', Math.sin(t * .9) * .05); set(b, 'Head', 'x', Math.sin(t * .5) * .08); };
+
+      const hits = [], idlers = [], walkers = [];
+      let loaded = 0, t = 0, needs = true, visible = false, px = 0, py = 0, raf = 0, last = performance.now();
+
+      const load = async () => {
+        for (const s of STATIONS) {
+          const g = fit(await get(s.model), s.size, s.byHeight);
+          g.position.set(...s.pos); g.rotation.y = s.rot; g.traverse(o => { o.userData.station = s; }); scene.add(g); hits.push(g);
+          s.anchor.y = topOf(g) + .25;
+          if (s.key === 'cards') {
+            const top = topOf(g);
+            for (let i = 0; i < 3; i++) {
+              const c = layFlat(await get('playing-card-f2f787')); const f = fit(c, .34);
+              f.position.set(s.pos[0] + (i - 1) * .3, top + .005, s.pos[2] + .1); f.rotation.y = s.rot + (i - 1) * .25; scene.add(f);
+            }
+          }
+          if (s.key === 'dice') {
+            const d = fit(await get('d6-numeral-die-315b3a'), .16); d.position.set(s.pos[0] + .05, s.pos[1] + .06, s.pos[2]); d.rotation.y = .5; scene.add(d);
+          }
+          needs = true;
+        }
+        for (const [x, z, r] of [[-3.8, -5.6, .42], [0, -6.6, 0], [3.8, -5.6, -.42]]) {
+          const f = fit(await get('festoon-light-run-45629f'), 4.2); f.position.set(x, 2.5, z); f.rotation.y = r; scene.add(f);
+          const glow = new THREE.PointLight(0xffc27a, 6, 6, 2); glow.position.set(x, 2.4, z + .6); scene.add(glow);
+        }
+        for (const [id, x, z] of [['blackjack-dealer-fc0ab1', -4.6, -.7], ['lounge-bartender-9d425a', .4, -5.6], ['poker-pro-da0258', 4.6, 1.1]]) {
+          const m = await get(id); const b = bones(m); const g = fit(m, 1.75, true);
+          g.position.set(x, 0, z); g.rotation.y = Math.atan2(-x, -z); scene.add(g); idlers.push({ b, off: Math.random() * 6 });
+        }
+        const paths = [['graduate-student-945ef0', 2.9, 2.0, .22, 0], ['graffiti-artist-2deb3d', 2.9, 2.0, .22, Math.PI],
+          ['cocktail-server-eb211b', 6.3, 4.4, .12, 1.2], ['skate-filmer-b9d393', 6.3, 4.4, -.12, 4]];
+        for (const [id, rx, rz, speed, phase] of paths) {
+          const m = await get(id); const b = bones(m); const g = fit(m, 1.72, true); scene.add(g);
+          const w = { g, b, rx, rz, speed, phase }; walkers.push(w); placeWalker(w);
+        }
+        status.hidden = true; loaded = 1; needs = true; kick();
+      };
+      function placeWalker(w) {
+        const th = w.phase + t * w.speed, cz = .3;
+        const x = w.rx * Math.cos(th), z = cz + w.rz * Math.sin(th);
+        const dx = -w.rx * Math.sin(th) * Math.sign(w.speed), dz = w.rz * Math.cos(th) * Math.sign(w.speed);
+        w.g.position.set(x, 0, z); w.g.rotation.y = Math.atan2(dx, dz);
+      }
+      load().catch(err => { console.warn('Room failed to load', err); status.hidden = false; status.textContent = 'The room didn’t load. Use the Play buttons in the case file.'; });
+
+      const size = () => {
+        const w = room.clientWidth, h = room.clientHeight; if (!w || !h) return;
+        renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); needs = true; kick();
+      };
+      new ResizeObserver(size).observe(room); size();
+
+      const placePins = () => {
+        const w = room.clientWidth, h = room.clientHeight, v = new THREE.Vector3();
+        for (const s of STATIONS) {
+          v.copy(s.anchor).project(camera);
+          const pw = s.pin.offsetWidth / 2 + 6;
+          const x = THREE.MathUtils.clamp((v.x + 1) / 2 * w, pw, w - pw), y = THREE.MathUtils.clamp((1 - v.y) / 2 * h, s.pin.offsetHeight + 10, h - 6);
+          s.pin.style.transform = `translate(${x}px, ${y}px) translate(-50%, -100%)`;
+          s.pin.style.visibility = v.z < 1 ? 'visible' : 'hidden';
+        }
+      };
+
+      function frame(now) {
+        raf = 0; const dt = Math.min(.05, (now - last) / 1000); last = now;
+        const still = reduce.matches;
+        if (!still) {
+          t += dt;
+          for (const w of walkers) { placeWalker(w); walk(w.b, t * 5.5 + w.phase); }
+          for (const i of idlers) idle(i.b, t + i.off);
+        }
+        const narrow = camera.aspect < 1;
+        const base = narrow ? [0, 12.5, 16.5] : [0, 7.2, 10.5];
+        const sx = still ? 0 : px * .8, sy = still ? 0 : py * .4;
+        camera.position.set(base[0] + sx + (still ? 0 : Math.sin(t * .15) * .25), base[1] - sy, base[2]);
+        camera.lookAt(look);
+        renderer.render(scene, camera); placePins(); needs = false;
+        // Paused while a mini-game is open, so the game gets the whole main thread.
+        if (visible && !still && !document.hidden && modal.hidden) raf = requestAnimationFrame(frame);
+      }
+      function kick() { if (!raf && (visible || needs)) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+      kickRoom = kick;
+
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; kick(); }, { threshold: 0 }).observe(room);
+      document.addEventListener('visibilitychange', kick);
+      reduce.addEventListener?.('change', () => { needs = true; kick(); });
+
+      const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+      const stationAt = e => {
+        const r = canvas.getBoundingClientRect();
+        ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+        ray.setFromCamera(ndc, camera);
+        const hit = ray.intersectObjects(hits, true)[0];
+        return hit?.object.userData.station || null;
+      };
+      canvas.addEventListener('pointermove', e => {
+        const r = room.getBoundingClientRect();
+        px = ((e.clientX - r.left) / r.width - .5) * 2; py = ((e.clientY - r.top) / r.height - .5) * 2;
+        if (e.pointerType === 'mouse') canvas.style.cursor = stationAt(e) ? 'pointer' : 'default';
+      });
+      canvas.addEventListener('pointerleave', () => { px = py = 0; });
+      canvas.addEventListener('click', e => { const s = stationAt(e); if (s) openGame(s, s.pin); });
+    }
+  </script>
+</body>
+</html>

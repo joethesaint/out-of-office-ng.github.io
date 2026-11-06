@@ -1,0 +1,23 @@
+# Model credits
+
+- An Hourglass with Sand by Polyfork (https://polyfork.dev/asset/an-hourglass-with-sand-ec9f11), CC BY 4.0
+- Arcade Console by Polyfork (https://polyfork.dev/asset/arcade-console-ec27c2), CC BY 4.0
+- Blackjack Dealer by Polyfork (https://polyfork.dev/asset/blackjack-dealer-fc0ab1), CC BY 4.0
+- Casino Chip by Polyfork (https://polyfork.dev/asset/casino-chip-c0e3b6), CC BY 4.0
+- Casino Die by Polyfork (https://polyfork.dev/asset/casino-die-b25753), CC BY 4.0
+- Cocktail Server by Polyfork (https://polyfork.dev/asset/cocktail-server-eb211b), CC BY 4.0
+- D20 Twenty-Sided Die by Polyfork (https://polyfork.dev/asset/d20-twenty-sided-die-038f10), CC BY 4.0
+- D6 Numeral Die by Polyfork (https://polyfork.dev/asset/d6-numeral-die-315b3a), CC BY 4.0
+- Festoon Light Run by Polyfork (https://polyfork.dev/asset/festoon-light-run-45629f), CC BY 4.0
+- Goblet by Polyfork (https://polyfork.dev/asset/goblet-87c3ba), CC BY 4.0
+- Graduate Student by Polyfork (https://polyfork.dev/asset/graduate-student-945ef0), CC BY 4.0
+- Graffiti Artist by Polyfork (https://polyfork.dev/asset/graffiti-artist-2deb3d), CC BY 4.0
+- Hexagonal Dice Tray by Polyfork (https://polyfork.dev/asset/hexagonal-dice-tray-883963), CC BY 4.0
+- Lounge Bartender by Polyfork (https://polyfork.dev/asset/lounge-bartender-9d425a), CC BY 4.0
+- Martini Glass by Polyfork (https://polyfork.dev/asset/martini-glass-c78705), CC BY 4.0
+- Playing Card by Polyfork (https://polyfork.dev/asset/playing-card-f2f787), CC BY 4.0
+- Poker Pro by Polyfork (https://polyfork.dev/asset/poker-pro-da0258), CC BY 4.0
+- Pool Table by Polyfork (https://polyfork.dev/asset/pool-table-1b3f86), CC BY 4.0
+- Skate Filmer by Polyfork (https://polyfork.dev/asset/skate-filmer-b9d393), CC BY 4.0
+- Taca Taca by Polyfork (https://polyfork.dev/asset/taca-taca-616f6a), CC BY 4.0
+- Tournament Poker Table by Polyfork (https://polyfork.dev/asset/tournament-poker-table-a75b66), CC BY 4.0
